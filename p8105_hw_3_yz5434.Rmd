@@ -342,8 +342,171 @@ jan_2024 = read_csv("data/citibike/Jan 2024 Citi.csv.zip")
 july_2024 = read_csv("data/citibike/July 2024 Citi.csv.zip")
 ```
 
+```{r}
+citibike_df =
+  bind_rows(
+    jan_2020 |> mutate(year = 2020, month = "January"),
+    july_2020 |> mutate(year = 2020, month = "July"),
+    jan_2024 |> mutate(year = 2024, month = "January"),
+    july_2024 |> mutate(year = 2024, month = "July")
+  )
+```
+
+```{r}
+citibike_clean =
+  citibike_df |>
+  mutate(
+    month = factor(
+      month,
+      levels = c("January", "July")
+    ),
+    weekdays = factor(
+      weekdays,
+      levels = c(
+        "Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday", "Sunday"
+      )
+    ),
+    member_casual = factor(
+      member_casual,
+      levels = c("casual", "member"),
+      labels = c("Casual", "Member")
+    ),
+    rideable_type = factor(rideable_type)
+  )
+```
+
+The cleaned Citi Bike dataset contains `r nrow(citibike_clean)` rides from January and July of `r paste(sort(unique(citibike_clean$year)), collapse = " and ")`, with `r ncol(citibike_clean)` variables describing ride characteristics。 The dataset includes bike type, day of the week, ride duration, starting and ending stations, membership status, year, and month. Categorical variables were converted to factors with appropriate ordering. There are `r sum(is.na(citibike_clean$start_station_name))` missing starting station names and `r sum(is.na(citibike_clean$end_station_name))` missing ending station names, and all other variables have no missing values. Ride durations range from approximately `r round(min(citibike_clean$duration), 0)` to `r round(max(citibike_clean$duration), 0)` minutes, with a median of `r round(median(citibike_clean$duration), 2)` minutes. All rides were retained for the analysis, except that records with missing starting station names were excluded when ranking starting stations.
+
+```{r}
+ride_count_df =
+  citibike_clean |>
+  group_by(year, month, member_casual) |>
+  summarise(
+    n_rides = n(),
+    .groups = "drop"
+  )
+
+ride_count_df |>
+  pivot_wider(
+    names_from = member_casual,
+    values_from = n_rides
+  ) |>
+  knitr::kable()
+```
+
+Citi Bike members accounted for more rides than casual riders in all four months. In both 2020 and 2024, July had more rides than January, which suggests a seasonal pattern in bike usage. The number of rides was also higher in 2024 than in 2020 for both months. July 2024 had the highest number of rides, while January 2020 had the lowest. 
+
+```{r}
+top_stations_df =
+  citibike_clean |>
+  filter(
+    year == 2024,
+    month == "July",
+    !is.na(start_station_name)
+  ) |>
+  count(
+    start_station_name,
+    name = "n_rides"
+  ) |>
+  slice_max(
+    order_by = n_rides,
+    n = 5,
+    with_ties = FALSE
+  )
+
+top_stations_df |>
+  knitr::kable()
+```
+
+In July 2024, Pier 61 at Chelsea Piers was the most popular starting station, followed by University Pl & E 14 St and W 21 St & 6 Ave. The five most popular stations had relatively similar ride counts, ranging from 146 to 163 rides.
 
 
+```{r}
+median_duration_df =
+  citibike_clean |>
+  group_by(year, month, weekdays) |>
+  summarise(
+    median_duration = median(duration),
+    .groups = "drop"
+  )
+```
+
+```{r}
+ggplot(
+  median_duration_df,
+  aes(
+    x = weekdays,
+    y = median_duration,
+    color = month,
+    group = month
+  )
+) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ year) +
+  labs(
+    title = "Median Ride Duration by Weekday, Month, and Year",
+    x = "Day of Week",
+    y = "Median Ride Duration (minutes)",
+    color = "Month"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+```
 
 
+Median ride duration was consistently higher in July than in January for both 2020 and 2024. Rides also tended to last longer on weekends. In July 2020, median duration reached approximately 16.5 minutes on Saturday and Sunday. Overall, median ride durations were higher in 2020 than in 2024, with the largest difference occurring in July. These patterns suggest that ride duration varies by season, day of the week, and year.
 
+```{r}
+citibike_2024 =
+  citibike_clean |>
+  filter(year == 2024)
+```
+
+```{r}
+ggplot(
+  citibike_2024,
+  aes(
+    x = member_casual,
+    y = duration,
+    fill = rideable_type
+  )
+) +
+  geom_boxplot(outlier.alpha = 0.15) +
+  facet_wrap(~ month) +
+  labs(
+    title = "Ride Duration by Month, Membership, and Bike Type in 2024",
+    x = "Membership Status",
+    y = "Ride Duration (minutes)",
+    fill = "Bike Type"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(
+  citibike_2024,
+  aes(
+    x = member_casual,
+    y = duration,
+    fill = rideable_type
+  )
+) +
+  geom_boxplot(outlier.alpha = 0.15) +
+  facet_wrap(~ month) +
+  coord_cartesian(ylim = c(0, 60)) +
+  labs(
+    title = "Ride Duration by Month, Membership, and Bike Type in 2024",
+    x = "Membership Status",
+    y = "Ride Duration (minutes)",
+    fill = "Bike Type"
+  ) +
+  theme_minimal()
+```
+
+I created two different plots. For the seond plot, the y-axis is limited to 0–60 minutes for readability; all observations were retained when calculating the boxplots.
+
+The boxplots show differences in ride duration by month, membership status, and bike type. Casual riders generally have longer median ride durations than members, particularly when using classic bikes. Among casual riders, classic bikes have higher median ride durations than electric bikes, while electric bikes have slightly higher medians among members. Ride durations tend to be longer in July than in January. All groups exhibit right-skewed distributions with numerous high-duration outliers. Casual riders using classic bikes also show greater variability in ride duration, as indicated by their wider interquartile ranges.
