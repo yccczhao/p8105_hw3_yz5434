@@ -165,13 +165,70 @@ The distributions of snowfall are relatively consistent across years. There is n
 ## Question2
 
 ```{r}
-demographic_df = read_csv("data/nhanes_covar.csv")
+demographic_df = read_csv("data/nhanes_covar.csv", skip = 4)
 
 accelerometer_df = read_csv("data/nhanes_accel.csv")
+
+dim(demographic_df)
+dim(accelerometer_df)
+
+head(demographic_df)
 ```
 
 
 
+```{r}
+demographic_clean =
+  demographic_df |>
+  filter(
+    age >= 21,
+    !is.na(sex),
+    !is.na(age),
+    !is.na(BMI),
+    !is.na(education)
+  ) |>
+  mutate(
+    sex = factor(
+      sex,
+      levels = c(1, 2),
+      labels = c("Male", "Female")
+    ),
+    education = factor(
+      education,
+      levels = c(1, 2, 3),
+      labels = c(
+        "Less than high school",
+        "High school equivalent",
+        "More than high school"
+      )
+    )
+  )
+
+```
+
+```{r}
+accelerometer_long =
+  accelerometer_df |>
+  pivot_longer(
+    cols = starts_with("min"),
+    names_to = "minute",
+    values_to = "MIMS"
+  ) |>
+  mutate(
+    minute = as.numeric(
+      stringr::str_remove(minute, "min")
+    )
+  )
+```
+
+```{r}
+nhanes_df =
+  accelerometer_long |>
+  inner_join(
+    demographic_clean,
+    by = "SEQN"
+  )
+```
 
 
 
