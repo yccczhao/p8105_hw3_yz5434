@@ -230,8 +230,41 @@ nhanes_df =
   )
 ```
 
+```{r}
+education_sex_df =
+  demographic_clean |>
+  group_by(education, sex) |>
+  summarise(
+    n = n(),
+    .groups = "drop"
+  )
+```
 
+```{r}
+education_sex_df |>
+  pivot_wider(
+    names_from = sex,
+    values_from = n
+  ) |>
+  knitr::kable()
+```
 
+```{r}
+ggplot(
+  demographic_clean,
+  aes(x = education, y = age, fill = sex)
+) +
+  geom_boxplot() +
+  labs(
+    title = "Age Distribution by Education Level and Sex",
+    x = "Education Level",
+    y = "Age (years)",
+    fill = "Sex"
+  ) +
+  theme_minimal()
+```
+
+The age distributions vary across education levels and sex. Participants with less than a high school education generally have higher median ages, which are around 60 years for both men and women. In the high school equivalent group, women have a higher median age than men. Participants with more than a high school education tend to be younger, with median ages in the early to mid-40s for both sexes. Overall, the results suggest that age distributions differ across education categories, although there is considerable overlap between groups.
 
 
 
