@@ -330,6 +330,18 @@ ggplot(
 The 24-hour activity patterns show a clear daily cycle across all three education levels. Activity levels are lowest during the early morning hours, increase rapidly after approximately 6 AM, remain relatively high throughout the day, and decline in the evening. Female participants generally have higher mean activity levels than male participants during daytime hours. Participants with less than a high school education show a pronounced peak around midday. Those with a high school equivalent education exhibit relatively lower daytime activity levels. Overall, the results suggest similar daily activity patterns across education groups, with some differences in activity intensity by sex and education level.
 
 
+## Question 3
+
+```{r}
+jan_2020 = read_csv("data/citibike/Jan 2020 Citi.csv.zip")
+
+july_2020 = read_csv("data/citibike/July 2020 Citi.csv.zip")
+
+jan_2024 = read_csv("data/citibike/Jan 2024 Citi.csv.zip")
+
+july_2024 = read_csv("data/citibike/July 2024 Citi.csv.zip")
+```
+
 
 
 
