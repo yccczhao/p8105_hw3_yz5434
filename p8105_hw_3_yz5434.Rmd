@@ -1,0 +1,6 @@
+---
+title: "P8105 Homework 3"
+author: "Cecilia Zhao"
+date: "2026-10-18"
+output: github_document
+---
