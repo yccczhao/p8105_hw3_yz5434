@@ -5,8 +5,9 @@ date: "2026-10-18"
 output: github_document
 ---
 
-```{r}
+```{r setup, include=FALSE}
 library(tidyverse)
+library(patchwork)
 ```
 
 
@@ -42,6 +43,123 @@ missing_summary |>
 
 The `ny_noaa` dataset contains `r nrow(ny_noaa)` observations and `r ncol(ny_noaa)` variables, including weather station ID, date, precipitation (`prcp`), snowfall (`snow`), snow depth (`snwd`), maximum temperature (`tmax`), and minimum temperature (`tmin`).
 
-Missing data are a substantial issue in this dataset. Precipitation has the lowest percentage of missing values (`r round(missing_summary$missing_prcp, 2)`%), followed by snowfall (`r round(missing_summary$missing_snow, 2)`%) and snow depth (`r round(missing_summary$missing_snwd, 2)`%). Maximum and minimum temperatures have the highest missing percentages, both at `r round(missing_summary$missing_tmax, 2)`%. This substantial missingness in temperature measurements may affect subsequent analyses and visualizations.
+Missing data are a substantial issue in this dataset. Precipitation has the lowest percentage of missing values (`r round(missing_summary$missing_prcp, 2)`%), followed by snowfall (`r round(missing_summary$missing_snow, 2)`%) and snow depth (`r round(missing_summary$missing_snwd, 2)`%). Maximum and minimum temperatures have the highest missing percentages, both at `r round(missing_summary$missing_tmax, 2)`%.
+
+
+```{r}
+ny_noaa_df =
+  ny_noaa |>
+  mutate(
+    year = lubridate::year(date),
+    month = lubridate::month(date),
+    day = lubridate::day(date),
+    tmax = as.numeric(tmax) / 10,
+    tmin = as.numeric(tmin) / 10,
+    prcp = prcp / 10
+  )
+```
+
+```{r}
+snow_summary =
+  ny_noaa_df |>
+  filter(!is.na(snow)) |>
+  count(snow, sort = TRUE)
+
+snow_summary |>
+  head(10) |>
+  knitr::kable()
+```
+
+
+The most commonly observed snowfall value is `r snow_summary$snow[1]` mm, which occurres `r snow_summary$n[1]` times. This is expected because most days do not experience snowfall.
+
+Other frequently observed values include `r snow_summary$snow[2]`, `r snow_summary$snow[3]`, `r snow_summary$snow[4]`, and `r snow_summary$snow[5]` mm. These values are approximately equivalent to common fractions or multiples of an inch. It suggests that the observed frequencies may reflect measurement conventions and rounding when converting from inches to millimeters.
+
+
+```{r}
+temp_summary =
+  ny_noaa_df |>
+  filter(month %in% c(1, 7)) |>
+  group_by(id, year, month) |>
+  summarise(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(!is.na(mean_tmax))
+```
+
+```{r}
+temp_summary |>
+  ggplot(aes(x = year, y = mean_tmax, group = id)) +
+  geom_point(alpha = 0.5) +
+  scale_x_continuous(breaks = seq(1980, 2010, 10)) +
+  facet_grid(. ~ month,
+           labeller = as_labeller(c(`1` = "January", `7` = "July"))) +
+  labs(
+    title = "Average Maximum Temperature in January and July",
+    x = "Year",
+    y = "Average Maximum Temperature (°C)"
+  ) +
+  theme_minimal()
+```
+
+
+
+The plot shows a clear seasonal difference in average maximum temperatures between January and July. January temperatures are generally much lower and more variable. July temperatures are higher and more concentrated. There is some variation across years, but no obvious long-term trend.
+
+A few potential outliers are visible in both months, particularly unusually low average temperatures in January and July. These values may reflect extreme weather conditions or incomplete observations and would require further investigation.
+
+
+```{r}
+ggp_temp =
+  ny_noaa_df |>
+  drop_na(tmax, tmin) |>
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_hex() +
+  labs(
+    title = "Maximum vs Minimum Temperature",
+    x = "Minimum Temperature (°C)",
+    y = "Maximum Temperature (°C)"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+ggp_snow =
+  ny_noaa_df |>
+  filter(snow > 0, snow < 100) |>
+  ggplot(aes(x = snow)) +
+  geom_density() +
+  facet_wrap(~ year, ncol = 5) +
+  labs(
+    title = "Distribution of Snowfall by Year",
+    x = "Snowfall (mm)",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+```
+
+
+```{r, fig.width=12, fig.height=14}
+combined_plot =
+  (ggp_temp / ggp_snow) +
+  plot_annotation(
+    title = "Temperature and Snowfall in New York",
+    tag_levels = "A"
+  )
+
+combined_plot
+```
+Panel A: Maximum vs Minimum Temperature：
+
+The plot shows a clear positive relationship between minimum and maximum temperatures. As minimum temperature increases, maximum temperature generally increases as well. There are a few potential outliers appear at unusually high or low temperatures. A hexbin plot is more appropriate than a scatterplot for this large dataset because it reduces overplotting and makes the concentration of observations easier to see.
+
+Panel B: Distribution of Snowfall by Year:
+
+My code focuses on snowfall values greater than 0 and less than 100 mm. So I excluded days with no snowfall and observations with snowfall of 100 mm or more.
+
+The distributions of snowfall are relatively consistent across years. There is no obvious long-term changes in their overall shapes. Smaller snowfall amounts are more common, and larger snowfall amounts occur less frequently. Several peaks appear at similar snowfall values across years, which may reflect measurement conventions and rounding when converting snowfall measurements from inches to millimeters.
+
 
 
