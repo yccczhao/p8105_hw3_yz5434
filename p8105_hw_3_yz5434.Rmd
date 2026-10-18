@@ -162,4 +162,20 @@ My code focuses on snowfall values greater than 0 and less than 100 mm. So I exc
 The distributions of snowfall are relatively consistent across years. There is no obvious long-term changes in their overall shapes. Smaller snowfall amounts are more common, and larger snowfall amounts occur less frequently. Several peaks appear at similar snowfall values across years, which may reflect measurement conventions and rounding when converting snowfall measurements from inches to millimeters.
 
 
+## Question2
+
+```{r}
+demographic_df = read_csv("data/nhanes_covar.csv")
+
+accelerometer_df = read_csv("data/nhanes_accel.csv")
+```
+
+
+
+
+
+
+
+
+
 
