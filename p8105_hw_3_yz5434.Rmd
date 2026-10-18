@@ -4,3 +4,44 @@ author: "Cecilia Zhao"
 date: "2026-10-18"
 output: github_document
 ---
+
+```{r}
+library(tidyverse)
+```
+
+
+## Question 1
+
+```{r}
+library(p8105.datasets)
+data("ny_noaa")
+
+ny_noaa
+```
+
+```{r}
+nrow(ny_noaa)
+ncol(ny_noaa)
+```
+
+```{r}
+missing_summary =
+  ny_noaa |>
+  summarise(
+    missing_prcp = mean(is.na(prcp)) * 100,
+    missing_snow = mean(is.na(snow)) * 100,
+    missing_snwd = mean(is.na(snwd)) * 100,
+    missing_tmax = mean(is.na(tmax)) * 100,
+    missing_tmin = mean(is.na(tmin)) * 100
+  )
+
+missing_summary |>
+  knitr::kable(digits = 2)
+```
+
+
+The `ny_noaa` dataset contains `r nrow(ny_noaa)` observations and `r ncol(ny_noaa)` variables, including weather station ID, date, precipitation (`prcp`), snowfall (`snow`), snow depth (`snwd`), maximum temperature (`tmax`), and minimum temperature (`tmin`).
+
+Missing data are a substantial issue in this dataset. Precipitation has the lowest percentage of missing values (`r round(missing_summary$missing_prcp, 2)`%), followed by snowfall (`r round(missing_summary$missing_snow, 2)`%) and snow depth (`r round(missing_summary$missing_snwd, 2)`%). Maximum and minimum temperatures have the highest missing percentages, both at `r round(missing_summary$missing_tmax, 2)`%. This substantial missingness in temperature measurements may affect subsequent analyses and visualizations.
+
+
