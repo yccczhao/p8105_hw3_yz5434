@@ -13,7 +13,7 @@ library(patchwork)
 
 ## Question 1
 
-```{r}
+```{r, message=FALSE}
 library(p8105.datasets)
 data("ny_noaa")
 
@@ -59,6 +59,8 @@ ny_noaa_df =
   )
 ```
 
+The original maximum and minimum temperatures (`tmax` and `tmin`) were recorded in tenths of degrees Celsius, but precipitation (`prcp`) was recorded in tenths of millimeters. Therefore, I divided these variables by 10 to convert them into degrees Celsius and millimeters. Snowfall (`snow`) was already measured in millimeters, so no conversion was needed.
+
 ```{r}
 snow_summary =
   ny_noaa_df |>
@@ -71,7 +73,7 @@ snow_summary |>
 ```
 
 
-The most commonly observed snowfall value is `r snow_summary$snow[1]` mm, which occurres `r snow_summary$n[1]` times. This is expected because most days do not experience snowfall.
+The most commonly observed snowfall value is `r snow_summary$snow[1]` mm, which occurrs `r snow_summary$n[1]` times. This is expected because most days do not experience snowfall.
 
 Other frequently observed values include `r snow_summary$snow[2]`, `r snow_summary$snow[3]`, `r snow_summary$snow[4]`, and `r snow_summary$snow[5]` mm. These values are approximately equivalent to common fractions or multiples of an inch. It suggests that the observed frequencies may reflect measurement conventions and rounding when converting from inches to millimeters.
 
@@ -151,30 +153,24 @@ combined_plot =
 
 combined_plot
 ```
-Panel A: Maximum vs Minimum Temperature：
+Panel A: Maximum vs Minimum Temperature:
 
-The plot shows a clear positive relationship between minimum and maximum temperatures. As minimum temperature increases, maximum temperature generally increases as well. There are a few potential outliers appear at unusually high or low temperatures. A hexbin plot is more appropriate than a scatterplot for this large dataset because it reduces overplotting and makes the concentration of observations easier to see.
+The plot shows a clear positive relationship between minimum and maximum temperatures. As minimum temperature increases, maximum temperature generally increases as well. There are few potential outliers at unusually high or low temperatures. A hexbin plot is more appropriate than a scatterplot for this large dataset because it reduces overplotting and makes the concentration of observations easier to see.
 
 Panel B: Distribution of Snowfall by Year:
 
 My code focuses on snowfall values greater than 0 and less than 100 mm. So I excluded days with no snowfall and observations with snowfall of 100 mm or more.
 
-The distributions of snowfall are relatively consistent across years. There is no obvious long-term changes in their overall shapes. Smaller snowfall amounts are more common, and larger snowfall amounts occur less frequently. Several peaks appear at similar snowfall values across years, which may reflect measurement conventions and rounding when converting snowfall measurements from inches to millimeters.
+The distributions of snowfall are relatively consistent across years. There are no obvious long-term changes in their overall shapes. Smaller snowfall amounts are more common, and larger snowfall amounts occur less frequently. Several peaks appear at similar snowfall values across years, which may reflect measurement conventions and rounding when converting snowfall measurements from inches to millimeters.
 
 
-## Question2
+## Question 2
 
-```{r}
+```{r,message=FALSE}
 demographic_df = read_csv("data/nhanes_covar.csv", skip = 4)
 
 accelerometer_df = read_csv("data/nhanes_accel.csv")
-
-dim(demographic_df)
-dim(accelerometer_df)
-
-head(demographic_df)
 ```
-
 
 
 ```{r}
@@ -188,10 +184,11 @@ demographic_clean =
     !is.na(education)
   ) |>
   mutate(
+    SEQN = as.character(SEQN),
     sex = factor(
       sex,
       levels = c(1, 2),
-      labels = c("Male", "Female")
+      labels = c("Male", "Female"),
     ),
     education = factor(
       education,
@@ -215,6 +212,7 @@ accelerometer_long =
     values_to = "MIMS"
   ) |>
   mutate(
+    SEQN = as.character(SEQN),
     minute = as.numeric(
       stringr::str_remove(minute, "min")
     )
@@ -248,6 +246,8 @@ education_sex_df |>
   ) |>
   knitr::kable()
 ```
+
+After excluding participants younger than 21 or with missing demographic information, `r nrow(demographic_clean)` participants remained from the original `r nrow(demographic_df)` participants. The largest education group was more than high school, with `r sum(demographic_clean$education == "More than high school")` participants. The numbers of men and women were relatively balanced in the less than high school and more than high school groups. However, in the high school equivalent group, there were more men (`r sum(demographic_clean$education == "High school equivalent" & demographic_clean$sex == "Male")`) than women (`r sum(demographic_clean$education == "High school equivalent" & demographic_clean$sex == "Female")`).
 
 ```{r}
 ggplot(demographic_clean,
@@ -308,11 +308,12 @@ activity_time_df =
   )
 ```
 
-```{r}
+```{r, message=FALSE}
 ggplot(
   activity_time_df,
   aes(x = hour, y = mean_MIMS, color = sex)
 ) +
+  geom_line(alpha = 0.3) +
   geom_smooth(se = FALSE) +
   facet_wrap(~ education) +
   scale_x_continuous(
@@ -332,7 +333,7 @@ The 24-hour activity patterns show a clear daily cycle across all three educatio
 
 ## Question 3
 
-```{r}
+```{r,message=FALSE}
 jan_2020 = read_csv("data/citibike/Jan 2020 Citi.csv.zip")
 
 july_2020 = read_csv("data/citibike/July 2020 Citi.csv.zip")
@@ -507,6 +508,6 @@ ggplot(
   theme_minimal()
 ```
 
-I created two different plots. For the seond plot, the y-axis is limited to 0–60 minutes for readability; all observations were retained when calculating the boxplots.
+I created two different plots. For the second plot, the y-axis is limited to 0–60 minutes for readability; all observations were retained when calculating the boxplots.
 
 The boxplots show differences in ride duration by month, membership status, and bike type. Casual riders generally have longer median ride durations than members, particularly when using classic bikes. Among casual riders, classic bikes have higher median ride durations than electric bikes, while electric bikes have slightly higher medians among members. Ride durations tend to be longer in July than in January. All groups exhibit right-skewed distributions with numerous high-duration outliers. Casual riders using classic bikes also show greater variability in ride duration, as indicated by their wider interquartile ranges.
